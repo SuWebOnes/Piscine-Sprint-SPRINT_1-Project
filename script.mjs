@@ -4,6 +4,28 @@ import { getData } from "./storage.mjs";
 window.onload = function () {
   const users = getUserIds();
 
+  // --- Create the form ---
+  const form = document.createElement("form");
+
+  // Text input for topic name
+  const topicInput = document.createElement("input");
+  topicInput.type = "text";
+  topicInput.placeholder = "Enter topic name";
+  topicInput.name = "topic";
+  form.appendChild(topicInput);
+
+  // Date picker input
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.name = "date";
+  form.appendChild(dateInput);
+
+  // Submit button
+  const submitBtn = document.createElement("button");
+  submitBtn.type = "submit";
+  submitBtn.textContent = "Add Topic";
+  form.appendChild(submitBtn);
+
   // Dropdown
   const userSelect = document.createElement("select");
   userSelect.id = "user-select";
@@ -71,6 +93,7 @@ window.onload = function () {
     agendaDiv.appendChild(list);
   });
 
+  document.body.appendChild(form);
   document.body.appendChild(userSelect);
   document.body.appendChild(agendaDiv);
 };
