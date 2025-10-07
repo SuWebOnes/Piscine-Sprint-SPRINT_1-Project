@@ -41,13 +41,28 @@ window.onload = function () {
       return;
     }
 
+    // Filter out past dates
+    const today = new Date();
+    const upcomingData = userData.filter((item) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= today;
+    });
+
+    if (upcomingData.length === 0) {
+      agendaDiv.textContent = "No upcoming topics to revise.";
+      return;
+    }
+
+    // Sort by date
+    upcomingData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     const title = document.createElement("h3");
     title.textContent = "Agenda for User " + selectedUserId;
     agendaDiv.appendChild(title);
 
     const list = document.createElement("ul");
 
-    userData.forEach((item) => {
+    upcomingData.forEach((item) => {
       const listItem = document.createElement("li");
       listItem.textContent = `${item.date} — ${item.topic}`;
       list.appendChild(listItem);
