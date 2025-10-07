@@ -4,7 +4,7 @@ import { getData } from "./storage.mjs";
 window.onload = function () {
   const users = getUserIds();
 
-  // --- Create the form ---
+  // Create the form
   const form = document.createElement("form");
 
   // Text input for topic name
@@ -25,6 +25,34 @@ window.onload = function () {
   submitBtn.type = "submit";
   submitBtn.textContent = "Add Topic";
   form.appendChild(submitBtn);
+
+  // Validation message area
+  const message = document.createElement("p");
+  form.appendChild(message);
+
+  // Add form validation
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    message.textContent = "";
+
+    const topicValue = topicInput.value.trim();
+    const dateValue = dateInput.value;
+
+    // Check if both fields are filled
+    if (!topicValue || !dateValue) {
+      message.textContent = "Please enter both a topic name and a date.";
+      message.style.color = "red";
+      return;
+    }
+
+    // If valid
+    message.textContent = `Topic "${topicValue}" scheduled for ${dateValue}!`;
+    message.style.color = "green";
+
+    // Clear inputs
+    topicInput.value = "";
+    dateInput.value = "";
+  });
 
   // Dropdown
   const userSelect = document.createElement("select");
