@@ -1,3 +1,8 @@
+// ----------------------------------------------
+// Combined Script: Main Code + Step 6 Integration
+// Adds: Default today's date to date picker
+// ----------------------------------------------
+
 import { getUserIds } from "./common.mjs";
 import { getData } from "./storage.mjs";
 
@@ -18,6 +23,10 @@ window.onload = function () {
   const dateInput = document.createElement("input");
   dateInput.type = "date";
   dateInput.name = "date";
+
+  // Set default date to today
+  const today = new Date().toISOString().split("T")[0];
+  dateInput.value = today;
   form.appendChild(dateInput);
 
   // Submit button
@@ -49,9 +58,9 @@ window.onload = function () {
     message.textContent = `Topic "${topicValue}" scheduled for ${dateValue}!`;
     message.style.color = "green";
 
-    // Clear inputs
+    // Clear inputs — keep default today’s date
     topicInput.value = "";
-    dateInput.value = "";
+    dateInput.value = new Date().toISOString().split("T")[0];
   });
 
   // Dropdown
