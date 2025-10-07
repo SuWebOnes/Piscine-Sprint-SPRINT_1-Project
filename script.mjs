@@ -63,10 +63,30 @@ window.onload = function () {
     const base = new Date(startDate);
     const revisions = [
       { label: '1 Week', date: new Date(base.setDate(base.getDate() + 7)) },
-      { label: '1 Month', date: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 1)) },
-      { label: '3 Months', date: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 3)) },
-      { label: '6 Months', date: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 6)) },
-      { label: '1 Year', date: new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)) },
+      {
+        label: '1 Month',
+        date: new Date(
+          new Date(startDate).setMonth(new Date(startDate).getMonth() + 1)
+        ),
+      },
+      {
+        label: '3 Months',
+        date: new Date(
+          new Date(startDate).setMonth(new Date(startDate).getMonth() + 3)
+        ),
+      },
+      {
+        label: '6 Months',
+        date: new Date(
+          new Date(startDate).setMonth(new Date(startDate).getMonth() + 6)
+        ),
+      },
+      {
+        label: '1 Year',
+        date: new Date(
+          new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)
+        ),
+      },
     ];
     return revisions.map(r => ({
       label: r.label,
@@ -87,7 +107,8 @@ window.onload = function () {
 
     // Check if all fields are filled
     if (!topicValue || !dateValue || !selectedUserId) {
-      message.textContent = 'Please select a user, enter a topic name, and a date.';
+      message.textContent =
+        'Please select a user, enter a topic name, and a date.';
       message.style.color = 'red';
       return;
     }
@@ -107,9 +128,11 @@ window.onload = function () {
 
     //  Update agenda display immediately
     updateAgenda(selectedUserId);
+    // Keep current user selected so agenda stays visible
+    userSelect.value = selectedUserId;
 
     // Confirmation message
-    message.textContent = `Topic "${topicValue}" added with revision dates!`;
+    message.textContent = `Topic "${topicValue}" added successfully with revision dates!`;
     message.style.color = 'green';
 
     // Reset input fields
