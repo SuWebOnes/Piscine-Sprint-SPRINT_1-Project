@@ -1,10 +1,5 @@
-// ----------------------------------------------
-// Combined Script: Main Code + Step 6 Integration
-// Adds: Default today's date to date picker
-// ----------------------------------------------
-
 import { getUserIds } from './common.mjs';
-import { getData } from './storage.mjs';
+import { getData, saveData } from './storage.mjs'; // Added saveData import
 
 window.onload = function () {
   const users = getUserIds();
@@ -27,9 +22,25 @@ window.onload = function () {
   // Set default date to today
   const today = new Date().toISOString().split('T')[0];
   dateInput.value = today;
-  dateInput.min = today; //  UPDATED
+  dateInput.min = today; // Prevents past dates
 
   form.appendChild(dateInput);
+
+  // Dropdown for user selection (needed for storing data)
+  const userSelect = document.createElement('select');
+  userSelect.id = 'user-select';
+
+  const defaultOption = document.createElement('option');
+  defaultOption.textContent = 'Select a user...';
+  defaultOption.value = '';
+  userSelect.appendChild(defaultOption);
+
+  users.forEach(id => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = 'User ' + id;
+    userSelect.appendChild(option);
+  });
 
   // Submit button
   const submitBtn = document.createElement('button');
@@ -41,74 +52,87 @@ window.onload = function () {
   const message = document.createElement('p');
   form.appendChild(message);
 
-  // Add form validation
+  // Agenda display container
+  const agendaDiv = document.createElement('div');
+  agendaDiv.id = 'agenda';
+
+  // ----------------------------------------------
+  //  Helper — Calculate Revision Dates
+  // ----------------------------------------------
+  function calculateRevisionDates(startDate) {
+    const base = new Date(startDate);
+    const revisions = [
+      { label: '1 Week', date: new Date(base.setDate(base.getDate() + 7)) },
+      { label: '1 Month', date: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 1)) },
+      { label: '3 Months', date: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 3)) },
+      { label: '6 Months', date: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 6)) },
+      { label: '1 Year', date: new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)) },
+    ];
+    return revisions.map(r => ({
+      label: r.label,
+      date: r.date.toISOString().split('T')[0],
+    }));
+  }
+
+  // ----------------------------------------------
+  // Form Submission Handler (includes saved date)
+  // ----------------------------------------------
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     message.textContent = '';
 
     const topicValue = topicInput.value.trim();
     const dateValue = dateInput.value;
+    const selectedUserId = userSelect.value;
 
-    // Check if both fields are filled
-    if (!topicValue || !dateValue) {
-      message.textContent = 'Please enter both a topic name and a date.';
+    // Check if all fields are filled
+    if (!topicValue || !dateValue || !selectedUserId) {
+      message.textContent = 'Please select a user, enter a topic name, and a date.';
       message.style.color = 'red';
       return;
     }
 
-    // If valid
-    message.textContent = `Topic "${topicValue}" scheduled for ${dateValue}!`;
+    // STEP 7: Generate revision dates
+    const revisionDates = calculateRevisionDates(dateValue);
+
+    // STEP 7: Prepare data for saving
+    const newEntries = revisionDates.map(r => ({
+      topic: topicValue,
+      date: r.date,
+      label: r.label,
+    }));
+
+    //  Save to storage
+    saveData(selectedUserId, newEntries);
+
+    //  Update agenda display immediately
+    updateAgenda(selectedUserId);
+
+    // Confirmation message
+    message.textContent = `Topic "${topicValue}" added with revision dates!`;
     message.style.color = 'green';
 
-    // ✅ Keep date picker default as today’s date for next entry
-    // (User can still select another date manually afterward)
+    // Reset input fields
     topicInput.value = '';
-    dateInput.value = new Date().toISOString().split('T')[0]; // ✅ UPDATED
+    dateInput.value = new Date().toISOString().split('T')[0]; // keep default as today
   });
 
-  // Dropdown
-  const userSelect = document.createElement('select');
-  userSelect.id = 'user-select';
-
-  const defaultOption = document.createElement('option');
-  defaultOption.textContent = 'Select a user...';
-  defaultOption.value = '';
-  userSelect.appendChild(defaultOption);
-
-  // Populate dropdown
-  users.forEach(id => {
-    const option = document.createElement('option');
-    option.value = id;
-    option.textContent = 'User ' + id;
-    userSelect.appendChild(option);
-  });
-
-  // Agenda display
-  const agendaDiv = document.createElement('div');
-  agendaDiv.id = 'agenda';
-
-  // Dropdown change event
-  userSelect.addEventListener('change', function () {
-    const selectedUserId = userSelect.value;
+  // ----------------------------------------------
+  //  Agenda Display (Refactored into function)
+  // ----------------------------------------------
+  function updateAgenda(userId) {
     agendaDiv.innerHTML = '';
+    if (!userId) return;
 
-    if (selectedUserId === '') {
-      return;
-    }
-
-    const userData = getData(selectedUserId);
+    const userData = getData(userId);
 
     if (!userData || userData.length === 0) {
       agendaDiv.textContent = 'This user has no agenda yet.';
       return;
     }
 
-    // Filter out past dates
     const today = new Date();
-    const upcomingData = userData.filter(item => {
-      const itemDate = new Date(item.date);
-      return itemDate >= today;
-    });
+    const upcomingData = userData.filter(item => new Date(item.date) >= today);
 
     if (upcomingData.length === 0) {
       agendaDiv.textContent = 'No upcoming topics to revise.';
@@ -119,20 +143,25 @@ window.onload = function () {
     upcomingData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const title = document.createElement('h3');
-    title.textContent = 'Agenda for User ' + selectedUserId;
+    title.textContent = 'Agenda for User ' + userId;
     agendaDiv.appendChild(title);
 
     const list = document.createElement('ul');
-
     upcomingData.forEach(item => {
       const listItem = document.createElement('li');
-      listItem.textContent = `${item.date} — ${item.topic}`;
+      listItem.textContent = `${item.date} — ${item.topic} (${item.label})`; // STEP 7: Added label
       list.appendChild(listItem);
     });
-
     agendaDiv.appendChild(list);
+  }
+
+  // Dropdown change event
+  userSelect.addEventListener('change', function () {
+    const selectedUserId = userSelect.value;
+    updateAgenda(selectedUserId);
   });
 
+  // Append all to DOM
   document.body.appendChild(form);
   document.body.appendChild(userSelect);
   document.body.appendChild(agendaDiv);
