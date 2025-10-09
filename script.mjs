@@ -1,113 +1,125 @@
+// ======================
+// IMPORTS
+// ======================
 import { getUserIds } from "./common.mjs";
 import { getData, addData } from "./storage.mjs";
 
-// Calculate revision dates (Req. 7 + testable for Req. 9)
+// ======================
+// HELPER FUNCTIONS
+// ======================
 
+// Safe month addition function — handles month rollovers
+const addMonths = (date, months) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+};
+
+// Calculate revision dates (Req. 7 + 9)
 export function calculateRevisionDates(startDate) {
   const today = new Date();
-  const revisions = [
-    {
-      label: "1 Week",
-      date: new Date(new Date(startDate).getTime() + 7 * 24 * 60 * 60 * 1000),
-    },
-    {
-      label: "1 Month",
-      date: new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 1)
-      ),
-    },
-    {
-      label: "3 Months",
-      date: new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 3)
-      ),
-    },
-    {
-      label: "6 Months",
-      date: new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 6)
-      ),
-    },
-    {
-      label: "1 Year",
-      date: new Date(
-        new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)
-      ),
-    },
+  const start = new Date(startDate);
+
+  // Revision schedule
+  const schedule = [
+    { label: "1 Week", offsetDays: 7 },
+    { label: "1 Month", offsetMonths: 1 },
+    { label: "3 Months", offsetMonths: 3 },
+    { label: "6 Months", offsetMonths: 6 },
+    { label: "1 Year", offsetMonths: 12 },
   ];
 
-  // Filter out any revision dates that are in the past for the 1-week step
+  const revisions = schedule.map((rev) => {
+    let date;
+    if (rev.offsetDays) {
+      date = new Date(start.getTime() + rev.offsetDays * 24 * 60 * 60 * 1000);
+    } else {
+      date = addMonths(start, rev.offsetMonths);
+    }
+    return { label: rev.label, date };
+  });
 
-  return revisions
-    .filter((rev, index) => {
-      if (index === 0 && rev.date < today) return false; // skip 1-week if in past
-      return true;
-    })
-    .map((rev) => ({
-      label: rev.label,
-      date:
-        rev.date < today
-          ? today.toISOString().split("T")[0]
-          : rev.date.toISOString().split("T")[0],
-    }));
+  // Filter & adjust past dates
+  const validRevisions = revisions
+    .filter((rev, index) => !(index === 0 && rev.date < today)) // skip 1-week if past
+    .map((rev, index) => {
+      let finalDate = rev.date;
+      if (start < today && rev.date < today) {
+        // Adjust timeline from today: Today, +2M, +5M, +11M
+        const monthsToAdd = [0, 2, 5, 11];
+        finalDate = addMonths(today, monthsToAdd[index] || 0);
+      }
+      return {
+        label: rev.label,
+        date: finalDate.toISOString().split("T")[0], // Format YYYY-MM-DD
+      };
+    });
+
+  return validRevisions;
 }
 
-// Page Initialisation
-
+// ======================
+// PAGE INITIALISATION
+// ======================
 window.onload = function () {
   const users = getUserIds();
 
-  // Create the form (Req. 5)
-
+  // ----------------------
+  // FORM CREATION
+  // ----------------------
   const form = document.createElement("form");
   form.id = "topic-form";
 
   const topicLabel = document.createElement("label");
   topicLabel.textContent = "Topic Name:";
   topicLabel.htmlFor = "topic";
-  form.appendChild(topicLabel);
 
   const topicInput = document.createElement("input");
   topicInput.type = "text";
   topicInput.id = "topic";
-  topicInput.placeholder = "Enter topic name";
   topicInput.name = "topic";
+  topicInput.placeholder = "Enter topic name";
   topicInput.required = true;
-  form.appendChild(topicInput);
-
-  // Text input for topic name
 
   const dateLabel = document.createElement("label");
   dateLabel.textContent = "Start Date:";
   dateLabel.htmlFor = "date";
-  form.appendChild(dateLabel);
-
-  // Date picker input
 
   const dateInput = document.createElement("input");
   dateInput.type = "date";
   dateInput.id = "date";
   dateInput.name = "date";
-  const today = new Date().toISOString().split("T")[0]; // today as a default date
+  const today = new Date().toISOString().split("T")[0];
   dateInput.value = today;
   dateInput.required = true;
-  form.appendChild(dateInput);
-
-  // Submit button
 
   const submitBtn = document.createElement("button");
   submitBtn.type = "submit";
   submitBtn.textContent = "Add Topic";
-  form.appendChild(submitBtn);
-
-  // Validation message area
 
   const message = document.createElement("p");
-  message.setAttribute("aria-live", "polite"); // Accessibility (Req. 10)
-  form.appendChild(message);
+  message.setAttribute("aria-live", "polite");
 
-  // User Dropdown (Req. 1 + 8)
+  // ★ Wrap form elements in flex container for uniform widths
+  const inputWrapper = document.createElement("div");
+  inputWrapper.style.display = "flex";
+  inputWrapper.style.flexDirection = "column";
+  inputWrapper.style.gap = "10px";
+  [topicLabel, topicInput, dateLabel, dateInput, submitBtn, message].forEach(el => {
+    inputWrapper.appendChild(el);
+    if (el.tagName === "INPUT" || el.tagName === "BUTTON") {
+      el.style.width = "100%";
+      el.style.padding = "10px";
+      el.style.fontSize = "16px";
+      el.style.boxSizing = "border-box";
+    }
+  });
 
+  form.appendChild(inputWrapper);
+
+  // ----------------------
+  // USER DROPDOWN
+  // ----------------------
   const userLabel = document.createElement("label");
   userLabel.textContent = "Select User:";
   userLabel.htmlFor = "user-select";
@@ -122,8 +134,6 @@ window.onload = function () {
   defaultOption.value = "";
   userSelect.appendChild(defaultOption);
 
-  // Populate dropdown
-
   users.forEach((id) => {
     const option = document.createElement("option");
     option.value = id;
@@ -131,14 +141,21 @@ window.onload = function () {
     userSelect.appendChild(option);
   });
 
-  // Combine label and dropdown
-
+  // ★ Wrap label + select in flex container
   const userContainer = document.createElement("div");
+  userContainer.style.display = "flex";
+  userContainer.style.flexDirection = "column";
+  userContainer.style.gap = "5px";
   userContainer.appendChild(userLabel);
   userContainer.appendChild(userSelect);
+  userSelect.style.width = "100%";
+  userSelect.style.padding = "10px";
+  userSelect.style.fontSize = "16px";
+  userSelect.style.boxSizing = "border-box";
 
-  // Agenda Display (Req. 8)
-
+  // ----------------------
+  // AGENDA DISPLAY
+  // ----------------------
   const agendaDiv = document.createElement("div");
   agendaDiv.id = "agenda";
   agendaDiv.setAttribute("role", "region");
@@ -154,8 +171,6 @@ window.onload = function () {
       return;
     }
 
-    // Filter upcoming revisions or show today if in past
-
     const todayDate = new Date();
     const upcoming = data
       .map((item) => ({
@@ -165,7 +180,7 @@ window.onload = function () {
             ? todayDate.toISOString().split("T")[0]
             : item.date,
       }))
-      .sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate)); // Sort by date
+      .sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate));
 
     if (upcoming.length === 0) {
       agendaDiv.textContent = "No upcoming topics to revise.";
@@ -185,8 +200,9 @@ window.onload = function () {
     agendaDiv.appendChild(list);
   }
 
-  // Form Submission (Req. 7 + 8)
-
+  // ----------------------
+  // FORM SUBMISSION
+  // ----------------------
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     message.textContent = "";
@@ -200,7 +216,6 @@ window.onload = function () {
       message.style.color = "red";
       return;
     }
-    // Calculate revisions
 
     const revisions = calculateRevisionDates(date);
     const entries = revisions.map((r) => ({
@@ -209,54 +224,36 @@ window.onload = function () {
       label: r.label,
     }));
 
-    // Use addData() instead of saveData()
-
     addData(userId, entries);
-
-    // Update agenda immediately
-
     updateAgenda(userId);
 
     message.textContent = `Topic "${topic}" added successfully!`;
     message.style.color = "green";
 
-    // Reset inputs
-
     topicInput.value = "";
     dateInput.value = today;
   });
-
-  // Update agenda when user changes
 
   userSelect.addEventListener("change", () => {
     updateAgenda(userSelect.value);
   });
 
-  // Wrapper div for all content
-
+  // ----------------------
+  // PAGE WRAPPER
+  // ----------------------
   const wrapper = document.createElement("div");
   wrapper.id = "app-wrapper";
-
-  //  main landmark
-
   wrapper.setAttribute("role", "main");
-
-  // for touch targets & readability
-
-  wrapper.style.fontSize = "16px"; // larger font for readability
-  wrapper.style.lineHeight = "1.6"; // spacing between lines
-  wrapper.style.padding = "20px"; // padding around content
+  wrapper.style.fontSize = "16px";
+  wrapper.style.lineHeight = "1.6";
+  wrapper.style.padding = "20px";
   wrapper.style.display = "flex";
   wrapper.style.flexDirection = "column";
-  wrapper.style.gap = "15px"; // spacing between child elements
-
-  // Append existing elements to wrapper
+  wrapper.style.gap = "15px";
 
   wrapper.appendChild(userContainer);
   wrapper.appendChild(form);
   wrapper.appendChild(agendaDiv);
 
-  // Append wrapper to body
-
-  document.body.appendChild(wrapper); // Updated append with wrapper
+  document.body.appendChild(wrapper);
 };
