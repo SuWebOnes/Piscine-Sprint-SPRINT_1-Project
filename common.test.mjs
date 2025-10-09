@@ -1,7 +1,5 @@
-import { getUserIDs } from "./common.mjs";
-import assert from "node:assert";
-import test from "node:test";
+import { getUserIds } from "./common.mjs";
 
 test("User count is correct", () => {
-  assert.equal(getUserIds().length, 5);
+  expect(getUserIds().length).toBe(5);
 });
