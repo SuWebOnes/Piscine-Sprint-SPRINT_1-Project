@@ -1,13 +1,24 @@
 import { getUserIds } from './common.mjs';
 import { getData, addData } from './storage.mjs';
 
+//  Safe month calculation
+
+const addMonths = (date, months) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+};
+
 
 // Helper: Calculate revision dates (Req. 7 + testable for Req. 9)
 
 export function calculateRevisionDates(startDate) {
-  const base = new Date(startDate);
+  const today = new Date();
   const revisions = [
-    { label: '1 Week', date: new Date(base.setDate(base.getDate() + 7)) },
+    {
+      label: '1 Week',
+      date: new Date(new Date(startDate).getTime() + 7 * 24 * 60 * 60 * 1000),
+    },
     {
       label: '1 Month',
       date: new Date(
@@ -33,10 +44,20 @@ export function calculateRevisionDates(startDate) {
       ),
     },
   ];
-  return revisions.map(r => ({
-    label: r.label,
-    date: r.date.toISOString().split('T')[0],
-  }));
+
+  // Filter out any revision dates that are in the past for the 1-week step
+  return revisions
+    .filter((rev, index) => {
+      if (index === 0 && rev.date < today) return false; // skip 1-week if in past
+      return true;
+    })
+    .map(rev => ({
+      label: rev.label,
+      date:
+        rev.date < today
+          ? today.toISOString().split('T')[0]
+          : rev.date.toISOString().split('T')[0],
+    }));
 }
 
 // Page Initialization
@@ -77,7 +98,7 @@ window.onload = function () {
   dateInput.name = 'date';
   const today = new Date().toISOString().split('T')[0]; // today as a default date
   dateInput.value = today;
-  dateInput.min = today;
+  // dateInput.min = today;
   dateInput.required = true;
   form.appendChild(dateInput);
 
@@ -95,7 +116,7 @@ window.onload = function () {
   form.appendChild(message);
 
   // User Dropdown (Req. 1 + 8)
-  
+
   const userLabel = document.createElement('label');
   userLabel.textContent = 'Select User:';
   userLabel.htmlFor = 'user-select';
@@ -139,12 +160,21 @@ window.onload = function () {
 
     // Filter out past dates
 
-    const today = new Date();
-    const upcoming = data.filter(item => new Date(item.date) >= today);
-    
+    // Filter upcoming revisions or show today if in past
+    const todayDate = new Date();
+    const upcoming = data
+      .map(item => ({
+        ...item,
+        displayDate:
+          new Date(item.date) < todayDate
+            ? todayDate.toISOString().split('T')[0]
+            : item.date,
+      }))
+      .sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate));
+
     // Sort by date
 
-    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+    upcoming.sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate));
 
     if (upcoming.length === 0) {
       agendaDiv.textContent = 'No upcoming topics to revise.';
@@ -158,14 +188,14 @@ window.onload = function () {
     const list = document.createElement('ul');
     upcoming.forEach(item => {
       const li = document.createElement('li');
-      li.textContent = `${item.date} — ${item.topic} (${item.label})`;
+      li.textContent = `${item.displayDate} — ${item.topic} (${item.label})`;
       list.appendChild(li);
     });
     agendaDiv.appendChild(list);
   }
 
   // Form Submission (Req. 7 + 8)
-  
+
   form.addEventListener('submit', e => {
     e.preventDefault();
     message.textContent = '';
@@ -179,7 +209,7 @@ window.onload = function () {
       message.style.color = 'red';
       return;
     }
-
+    // Calculate revisions
     const revisions = calculateRevisionDates(date);
     const entries = revisions.map(r => ({
       topic,
@@ -190,10 +220,13 @@ window.onload = function () {
     // Use addData() instead of saveData()
     addData(userId, entries);
 
+    // Update agenda immediately
     updateAgenda(userId);
+
     message.textContent = `Topic "${topic}" added successfully!`;
     message.style.color = 'green';
 
+    // Reset inputs
     topicInput.value = '';
     dateInput.value = today;
   });
@@ -204,20 +237,20 @@ window.onload = function () {
   });
 
   // Wrapper div for all content
-  
-  const wrapper = document.createElement("div");
-  wrapper.id = "app-wrapper";
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'app-wrapper';
 
   //  main landmark
-  wrapper.setAttribute("role", "main");
+  wrapper.setAttribute('role', 'main');
 
   // for touch targets & readability
-  wrapper.style.fontSize = "16px";       // larger font for readability
-  wrapper.style.lineHeight = "1.6";      // spacing between lines
-  wrapper.style.padding = "20px";        // padding around content
-  wrapper.style.display = "flex";
-  wrapper.style.flexDirection = "column";
-  wrapper.style.gap = "15px";            // spacing between child elements
+  wrapper.style.fontSize = '16px'; // larger font for readability
+  wrapper.style.lineHeight = '1.6'; // spacing between lines
+  wrapper.style.padding = '20px'; // padding around content
+  wrapper.style.display = 'flex';
+  wrapper.style.flexDirection = 'column';
+  wrapper.style.gap = '15px'; // spacing between child elements
 
   // Append existing elements to wrapper
   wrapper.appendChild(form);
