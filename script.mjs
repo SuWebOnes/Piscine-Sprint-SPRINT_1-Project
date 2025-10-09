@@ -203,8 +203,27 @@ window.onload = function () {
     updateAgenda(userSelect.value);
   });
 
-  // Append all to document
-  document.body.appendChild(userSelect);
-  document.body.appendChild(form);
-  document.body.appendChild(agendaDiv);
+  // Wrapper div for all content
+  
+  const wrapper = document.createElement("div");
+  wrapper.id = "app-wrapper";
+
+  //  main landmark
+  wrapper.setAttribute("role", "main");
+
+  // for touch targets & readability
+  wrapper.style.fontSize = "16px";       // larger font for readability
+  wrapper.style.lineHeight = "1.6";      // spacing between lines
+  wrapper.style.padding = "20px";        // padding around content
+  wrapper.style.display = "flex";
+  wrapper.style.flexDirection = "column";
+  wrapper.style.gap = "15px";            // spacing between child elements
+
+  // Append existing elements to wrapper
+  wrapper.appendChild(form);
+  wrapper.appendChild(userSelect);
+  wrapper.appendChild(agendaDiv);
+
+  // Append wrapper to body
+  document.body.appendChild(wrapper); // Updated append with wrapper
 };
