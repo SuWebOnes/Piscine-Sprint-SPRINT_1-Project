@@ -3,5 +3,10 @@ import assert from "node:assert";
 import test from "node:test";
 
 test("User count is correct", () => {
-  expect(getUserIds().length).toBe(5);
+  assert.equal(getUserIds().length, 5);
+});
+
+test('All user IDs are strings', () => {
+  const users = getUserIds();
+  users.forEach(id => assert.strictEqual(typeof id, 'string'));
 });
