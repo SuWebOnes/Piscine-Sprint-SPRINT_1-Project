@@ -1,14 +1,6 @@
 import { getUserIds } from "./common.mjs";
 import { getData, addData } from "./storage.mjs";
 
-// Safe month calculation
-
-const addMonths = (date, months) => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
-};
-
 // Calculate revision dates (Req. 7 + testable for Req. 9)
 
 export function calculateRevisionDates(startDate) {
@@ -173,11 +165,7 @@ window.onload = function () {
             ? todayDate.toISOString().split("T")[0]
             : item.date,
       }))
-      .sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate));
-
-    // Sort by date
-
-    upcoming.sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate));
+      .sort((a, b) => new Date(a.displayDate) - new Date(b.displayDate)); // Sort by date
 
     if (upcoming.length === 0) {
       agendaDiv.textContent = "No upcoming topics to revise.";
