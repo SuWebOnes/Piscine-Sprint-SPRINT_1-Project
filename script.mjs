@@ -1,9 +1,9 @@
 import { getUserIds } from './common.mjs';
 import { getData, addData } from './storage.mjs';
 
-// ----------------------------------------------
+
 // Helper: Calculate revision dates (Req. 7 + testable for Req. 9)
-// ----------------------------------------------
+
 export function calculateRevisionDates(startDate) {
   const base = new Date(startDate);
   const revisions = [
@@ -39,15 +39,13 @@ export function calculateRevisionDates(startDate) {
   }));
 }
 
-// ----------------------------------------------
 // Page Initialization
-// ----------------------------------------------
+
 window.onload = function () {
   const users = getUserIds();
 
-  // ----------------------------------------------
-  // Accessible Form (Req. 5)
-  // ----------------------------------------------
+  // Create the form (Req. 5)
+
   const form = document.createElement('form');
   form.id = 'topic-form';
 
@@ -64,33 +62,40 @@ window.onload = function () {
   topicInput.required = true;
   form.appendChild(topicInput);
 
+  // Text input for topic name
+
   const dateLabel = document.createElement('label');
   dateLabel.textContent = 'Start Date:';
   dateLabel.htmlFor = 'date';
   form.appendChild(dateLabel);
 
+  // Date picker input
+
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.id = 'date';
   dateInput.name = 'date';
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0]; // today as a default date
   dateInput.value = today;
   dateInput.min = today;
   dateInput.required = true;
   form.appendChild(dateInput);
+
+  // Submit button
 
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.textContent = 'Add Topic';
   form.appendChild(submitBtn);
 
+  // Validation message area
+
   const message = document.createElement('p');
   message.setAttribute('aria-live', 'polite'); // Accessibility (Req. 10)
   form.appendChild(message);
 
-  // ----------------------------------------------
   // User Dropdown (Req. 1 + 8)
-  // ----------------------------------------------
+  
   const userLabel = document.createElement('label');
   userLabel.textContent = 'Select User:';
   userLabel.htmlFor = 'user-select';
@@ -106,6 +111,8 @@ window.onload = function () {
   defaultOption.value = '';
   userSelect.appendChild(defaultOption);
 
+  // Populate dropdown
+
   users.forEach(id => {
     const option = document.createElement('option');
     option.value = id;
@@ -113,9 +120,8 @@ window.onload = function () {
     userSelect.appendChild(option);
   });
 
-  // ----------------------------------------------
   // Agenda Display (Req. 8)
-  // ----------------------------------------------
+
   const agendaDiv = document.createElement('div');
   agendaDiv.id = 'agenda';
   agendaDiv.setAttribute('role', 'region');
@@ -131,8 +137,13 @@ window.onload = function () {
       return;
     }
 
+    // Filter out past dates
+
     const today = new Date();
     const upcoming = data.filter(item => new Date(item.date) >= today);
+    
+    // Sort by date
+
     upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (upcoming.length === 0) {
@@ -153,9 +164,8 @@ window.onload = function () {
     agendaDiv.appendChild(list);
   }
 
-  // ----------------------------------------------
   // Form Submission (Req. 7 + 8)
-  // ----------------------------------------------
+  
   form.addEventListener('submit', e => {
     e.preventDefault();
     message.textContent = '';
