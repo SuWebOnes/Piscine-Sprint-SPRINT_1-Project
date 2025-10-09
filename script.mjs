@@ -12,52 +12,48 @@ const addMonths = (date, months) => {
 
 // Helper: Calculate revision dates (Req. 7 + testable for Req. 9)
 
+// Calculate Revision Dates (Handles Past Dates Correctly)
 export function calculateRevisionDates(startDate) {
   const today = new Date();
-  const revisions = [
-    {
-      label: '1 Week',
-      date: new Date(new Date(startDate).getTime() + 7 * 24 * 60 * 60 * 1000),
-    },
-    {
-      label: '1 Month',
-      date: new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 1)
-      ),
-    },
-    {
-      label: '3 Months',
-      date: new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 3)
-      ),
-    },
-    {
-      label: '6 Months',
-      date: new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 6)
-      ),
-    },
-    {
-      label: '1 Year',
-      date: new Date(
-        new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)
-      ),
-    },
+  const start = new Date(startDate);
+
+  const schedule = [
+    { label: "1 Week", offsetDays: 7 },
+    { label: "1 Month", offsetMonths: 1 },
+    { label: "3 Months", offsetMonths: 3 },
+    { label: "6 Months", offsetMonths: 6 },
+    { label: "1 Year", offsetMonths: 12 },
   ];
 
-  // Filter out any revision dates that are in the past for the 1-week step
-  return revisions
-    .filter((rev, index) => {
-      if (index === 0 && rev.date < today) return false; // skip 1-week if in past
-      return true;
-    })
-    .map(rev => ({
-      label: rev.label,
-      date:
-        rev.date < today
-          ? today.toISOString().split('T')[0]
-          : rev.date.toISOString().split('T')[0],
-    }));
+  const revisions = schedule.map((rev) => {
+    let date;
+    if (rev.offsetDays) {
+      date = new Date(start.getTime() + rev.offsetDays * 24 * 60 * 60 * 1000);
+    } else {
+      date = addMonths(start, rev.offsetMonths);
+    }
+    return { label: rev.label, date };
+  });
+
+  // Handle past start dates correctly
+  const validRevisions = revisions
+    .filter((rev, index) => !(index === 0 && rev.date < today)) // skip 1-week if past
+    .map((rev, index) => {
+      let finalDate = rev.date;
+
+      if (start < today && rev.date < today) {
+        // Past start date case → adjust revision timeline to today
+        const monthsToAdd = [0, 2, 5, 11]; // Today, +2M, +5M, +11M
+        finalDate = addMonths(today, monthsToAdd[index] || 0);
+      }
+
+      return {
+        label: rev.label,
+        date: finalDate.toISOString().split("T")[0],
+      };
+    });
+
+  return validRevisions;
 }
 
 // Page Initialization
