@@ -1,20 +1,11 @@
 {
   "name": "piscine-sprint-sprint_1-project",
   "version": "1.0.0",
-  "description": "At Code Your Future, we like to use a learning technique called spaced repetition. The technique involves reviewing a topic over increasing time gaps (e.g. after one week, one month, three months, six months, one year).",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "jest"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SuWebOnes/Piscine-Sprint-SPRINT_1-Project.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/SuWebOnes/Piscine-Sprint-SPRINT_1-Project/issues"
-  },
-  "homepage": "https://github.com/SuWebOnes/Piscine-Sprint-SPRINT_1-Project#readme"
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }
