@@ -52,7 +52,9 @@ export function calculateRevisionDates(startDate) {
   });
 
   // Skip 1-week if in past
-  return revisions.filter((rev, index) => !(index === 0 && new Date(rev.date) < today));
+  return revisions.filter(
+    (rev, index) => !(index === 0 && new Date(rev.date) < today)
+  );
 }
 
 // ======================
@@ -88,6 +90,7 @@ window.onload = function () {
   topicInput.name = "topic";
   topicInput.placeholder = "Enter topic name";
   topicInput.required = true;
+  topicInput.style.width = "220px";
 
   // Date input
   const dateLabel = document.createElement("label");
@@ -100,6 +103,7 @@ window.onload = function () {
   dateInput.name = "date";
   dateInput.value = today;
   dateInput.required = true;
+  dateInput.style.width = "220px";
 
   // User dropdown
   const userLabel = document.createElement("label");
@@ -110,6 +114,7 @@ window.onload = function () {
   userSelect.id = "user-select";
   userSelect.setAttribute("aria-label", "Select a user");
   userSelect.required = true;
+  userSelect.style.width = "220px";
 
   const defaultOption = document.createElement("option");
   defaultOption.textContent = "Select a user...";
@@ -133,9 +138,9 @@ window.onload = function () {
   message.setAttribute("aria-live", "polite");
 
   // Append form elements wrapped in flex containers
+  form.appendChild(wrap(userLabel, userSelect));
   form.appendChild(wrap(topicLabel, topicInput));
   form.appendChild(wrap(dateLabel, dateInput));
-  form.appendChild(wrap(userLabel, userSelect));
   form.appendChild(submitBtn);
   form.appendChild(message);
 
